@@ -1,0 +1,18 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Databases
+chroma_data/
+chroma_db/
+
+# Node/React
+second-brain-ui/node_modules/
+second-brain-ui/dist/
+second-brain-ui/.env
+
+# OS
+.DS_Store
+Thumbs.db

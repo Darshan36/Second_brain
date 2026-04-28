@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Second Brain Capture",
+  "version": "1.0",
+  "description": "Captures AI chats and sends them to local graph.",
+  "permissions": [
+    "activeTab",
+    "contextMenus" 
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://claude.ai/*"
+      ],
+      "js": ["content.js"]
+    }
+  ]
+}
