@@ -194,6 +194,8 @@ body, html {
   top: 20px;
   left: 20px;
   z-index: 20;
+  display: flex;
+  gap: 12px;
 }
 
 .reset-view-btn {
@@ -204,6 +206,29 @@ body, html {
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.export-btn {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #a1a1a6;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s;
+}
+
+.export-btn:hover {
+  background: rgba(50, 50, 50, 0.9);
+  color: white;
+  border-color: #4a90e2;
 }
 
 /* Edit Mode Styling */

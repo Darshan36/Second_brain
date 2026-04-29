@@ -4,6 +4,7 @@ import ollama
 import chromadb
 import uuid
 import re
+import os
 from neo4j import GraphDatabase
 from sentence_transformers import SentenceTransformer
 from contextlib import asynccontextmanager
@@ -342,6 +343,60 @@ async def delete_node(node_id: str):
         print(f"ChromaDB deletion skipped: {e}")
         
     return {"status": "success", "message": "Node deleted forever."}
+
+# --- Export Endpoint ---
+
+@app.get("/export")
+async def export_to_markdown():
+    export_dir = "SecondBrain_Export"
+    
+    # Create the folder if it doesn't exist
+    os.makedirs(export_dir, exist_ok=True)
+    
+    exported_count = 0
+    
+    with neo4j_driver.session() as session:
+        # Pull every node and its direct connections
+        result = session.run("""
+            MATCH (n:KnowledgeNode)
+            OPTIONAL MATCH (n)-[r]-(m:KnowledgeNode)
+            RETURN n.label AS label, n.summary AS summary, collect(DISTINCT {rel: type(r), target: m.label}) AS connections
+        """)
+        
+        for record in result:
+            label = record["label"]
+            if not label: 
+                continue
+            
+            # Strip out weird characters to make a safe file name
+            safe_title = re.sub(r'[^a-zA-Z0-9\s_-]', '', label).strip()
+            filepath = os.path.join(export_dir, f"{safe_title}.md")
+            
+            summary = record["summary"] or ""
+            connections = record["connections"]
+            
+            # Build the Markdown string
+            md_content = f"# {label}\n\n"
+            md_content += f"## Details\n{summary}\n\n"
+            md_content += "## Linked Concepts\n"
+            
+            has_links = False
+            for conn in connections:
+                if conn['target']:
+                    has_links = True
+                    # This creates the [[Obsidian]] style bi-directional link!
+                    md_content += f"- **{conn['rel']}** [[{conn['target']}]]\n"
+                    
+            if not has_links:
+                md_content += "_No connections yet._\n"
+                
+            # Write the file to your hard drive
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(md_content)
+                
+            exported_count += 1
+            
+    return {"status": "success", "message": f"Exported {exported_count} Markdown files to the '{export_dir}' folder."}
 
 @app.get("/graph")
 async def get_graph():

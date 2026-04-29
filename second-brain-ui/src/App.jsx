@@ -87,29 +87,44 @@ function App() {
     setGraphData({ nodes: updatedNodes, links: updatedLinks });
     setSelectedNode(null);
   };
+const handleSaveEdit = async () => {
+  await fetch(`http://localhost:8000/node/${selectedNode.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(editForm)
+  });
+  const updateNodesList = nodes => nodes.map(n => n.id === selectedNode.id ? { ...n, name: editForm.name, summary: editForm.summary } : n);
+  setFullGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
+  setGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
+  setSelectedNode({ ...selectedNode, name: editForm.name, summary: editForm.summary });
+  setIsEditing(false);
+};
 
-  const handleSaveEdit = async () => {
-    await fetch(`http://localhost:8000/node/${selectedNode.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm)
-    });
-    const updateNodesList = nodes => nodes.map(n => n.id === selectedNode.id ? { ...n, name: editForm.name, summary: editForm.summary } : n);
-    setFullGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
-    setGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
-    setSelectedNode({ ...selectedNode, name: editForm.name, summary: editForm.summary });
-    setIsEditing(false);
-  };
+const handleExport = async () => {
+  try {
+    const res = await fetch('http://localhost:8000/export');
+    const data = await res.json();
+    alert(`✅ ${data.message}`);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Export failed. Check terminal for errors.");
+  }
+};
 
-  return (
-    <div className="app-container">
+return (
+  <div className="app-container">
+    {/* Top Bar for Resetting View & Exporting */}
+    <div className="top-bar">
       {isFocused && (
-        <div className="top-bar">
-          <button className="reset-view-btn" onClick={handleResetFocus}>
-            ← Back to Full Graph
-          </button>
-        </div>
+        <button className="reset-view-btn" onClick={handleResetFocus}>
+          ← Back to Full Graph
+        </button>
       )}
+      <button className="export-btn" onClick={handleExport}>
+        📥 Export to Markdown
+      </button>
+    </div>
+
 
       <div className="graph-container">
         <ForceGraph3D
