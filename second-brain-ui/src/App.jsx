@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import Draggable from 'react-draggable';
 import './App.css';
 
 function App() {
+  const nodeRef = useRef(null);
   const [fullGraphData, setFullGraphData] = useState({ nodes: [], links: [] });
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [selectedNode, setSelectedNode] = useState(null);
@@ -122,8 +123,8 @@ function App() {
         />
       </div>
 
-      <Draggable handle=".chat-handle">
-        <div className={`command-palette ${isChatCollapsed ? 'collapsed' : ''}`}>
+      <Draggable handle=".chat-handle" nodeRef={nodeRef}>
+        <div ref={nodeRef} className={`command-palette ${isChatCollapsed ? 'collapsed' : ''}`}>
           <div className="chat-handle">
             <span className="drag-icon">⠿</span>
             <span className="chat-title">Second Brain AI</span>
