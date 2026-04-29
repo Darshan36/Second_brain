@@ -2,6 +2,7 @@ import chromadb
 from neo4j import GraphDatabase
 import ollama
 import re
+import time
 
 # 1. Connect to the Brain (Use your actual Neo4j password!)
 neo4j_driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password1234"))
@@ -37,11 +38,11 @@ def wake_up_synthesizer():
                 # Check if Neo4j already has an edge between these two
                 edge_check = session.run("""
                     MATCH (n:KnowledgeNode {id: $id1})-[r]-(m:KnowledgeNode {id: $id2}) 
-                    RETURN r
-                """, id1=node["id"], id2=neighbor_id).single()
+                    RETURN r LIMIT 1
+                """, id1=node["id"], id2=neighbor_id).peek()
                 
                 if edge_check is None: # No connection exists!
-                    neighbor = session.run("MATCH (n:KnowledgeNode {id: $id}) RETURN n.label AS label, n.summary AS summary", id=neighbor_id).single()
+                    neighbor = session.run("MATCH (n:KnowledgeNode {id: $id}) RETURN n.label AS label, n.summary AS summary LIMIT 1", id=neighbor_id).peek()
                     if not neighbor: continue
                     
                     # Agent 4 Interrogation Prompt
@@ -55,25 +56,34 @@ def wake_up_synthesizer():
                     If they are NOT connected, respond with exactly: NONE.
                     """
                     
-                    # Send to Qwen2.5
-                    res = ollama.chat(model='qwen2.5', messages=[
-                        {'role': 'system', 'content': 'You are a strict data classification AI. Output only a single uppercase word. No punctuation. No explanation.'},
-                        {'role': 'user', 'content': prompt}
-                    ])
-                    
-                    label = res['message']['content'].strip().upper()
-                    label = re.sub(r'[^A-Z_]', '', label) # Clean up any rogue punctuation
-                    
-                    # If the AI found a connection, draw the line!
-                    if label and label != "NONE" and len(label) > 2:
-                        print(f"🔗 Hidden connection found! [{node['label']}] -[{label}]-> [{neighbor['label']}]")
+                    try:
+                        # Send to Qwen2.5
+                        res = ollama.chat(model='qwen2.5', messages=[
+                            {'role': 'system', 'content': 'You are a strict data classification AI. Output only a single uppercase word. No punctuation. No explanation.'},
+                            {'role': 'user', 'content': prompt}
+                        ])
                         
-                        session.run(f"""
-                            MATCH (n:KnowledgeNode {{id: $id1}}), (m:KnowledgeNode {{id: $id2}})
-                            MERGE (n)-[r:{label}]->(m)
-                        """, id1=node["id"], id2=neighbor_id)
+                        label = res['message']['content'].strip().upper()
+                        label = re.sub(r'[^A-Z_]', '', label) # Clean up any rogue punctuation
                         
-                        new_edges += 1
+                        # If the AI found a connection, draw the line!
+                        if label and label != "NONE" and len(label) > 2:
+                            print(f"🔗 Hidden connection found! [{node['label']}] -[{label}]-> [{neighbor['label']}]")
+                            
+                            session.run(f"""
+                                MATCH (n:KnowledgeNode {{id: $id1}}), (m:KnowledgeNode {{id: $id2}})
+                                MERGE (n)-[r:{label}]->(m)
+                            """, id1=node["id"], id2=neighbor_id)
+                            
+                            new_edges += 1
+                        
+                        # Small breather for the system memory
+                        time.sleep(0.5)
+                        
+                    except Exception as e:
+                        print(f"⚠️ Ollama Error: {e}. Skipping this connection check.")
+                        time.sleep(2) # Wait longer if we hit a memory issue
+                        continue
                         
     print(f"🌅 Synthesizer finished. Drew {new_edges} new connections in your graph.")
 
