@@ -260,12 +260,26 @@ async def ask_brain(payload: QuestionPayload):
     matched_ids = results['ids'][0]
     context_summaries = []
     
-    # 3. Pull the rich text summaries out of Neo4j using those IDs
+    # 3. Pull the rich text summaries AND the graph connections out of Neo4j using those IDs
     with neo4j_driver.session() as session:
         for node_id in matched_ids:
-            record = session.run("MATCH (n:KnowledgeNode {id: $id}) RETURN n.summary AS summary", id=node_id).single()
+            record = session.run("""
+                MATCH (n:KnowledgeNode {id: $id}) 
+                OPTIONAL MATCH (n)-[r]-(m:KnowledgeNode) 
+                RETURN n.label AS label, n.summary AS summary, collect(type(r) + ' ' + m.label) AS connections
+            """, id=node_id).single()
+            
             if record:
-                context_summaries.append(record["summary"])
+                # 1. Add the main text
+                concept_text = f"Title: {record['label']}\nDetails: {record['summary']}"
+                
+                # 2. Add the graph connections as readable text for the LLM
+                if record["connections"] and record["connections"][0] is not None:
+                    valid_conns = [c for c in record["connections"] if c]
+                    if valid_conns:
+                        concept_text += f"\nGraph Connections: This concept is connected to -> {', '.join(valid_conns)}"
+                        
+                context_summaries.append(concept_text)
                 
     context_text = "\n\n---\n\n".join(context_summaries)
     
