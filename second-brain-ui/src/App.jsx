@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
+import Draggable from 'react-draggable';
 import './App.css';
 
 function App() {
-  // We now keep the FULL graph, and the DISPLAY graph separate
   const [fullGraphData, setFullGraphData] = useState({ nodes: [], links: [] });
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-  
   const [selectedNode, setSelectedNode] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   
-  // Chat & Edit States (unchanged)
   const [searchQuery, setSearchQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -23,7 +22,7 @@ function App() {
       .then(res => res.json())
       .then(data => {
         setFullGraphData(data);
-        setGraphData(data); // Initially display everything
+        setGraphData(data);
       })
       .catch(err => console.error("Error fetching brain data:", err));
   }, []);
@@ -34,28 +33,18 @@ function App() {
     setEditForm({ name: node.name, summary: node.summary });
   };
 
-  // --- NEW: FOCUS MODE LOGIC ---
   const handleFocus = () => {
     if (!selectedNode) return;
-
-    // 1. Find all links that touch this node
-    // (ForceGraph mutates strings to objects, so we check both .id and direct strings)
     const connectedLinks = fullGraphData.links.filter(l => 
       (l.source.id || l.source) === selectedNode.id || 
       (l.target.id || l.target) === selectedNode.id
     );
-
-    // 2. Find all nodes involved in those links
     const connectedNodeIds = new Set([selectedNode.id]);
     connectedLinks.forEach(l => {
       connectedNodeIds.add(l.source.id || l.source);
       connectedNodeIds.add(l.target.id || l.target);
     });
-
-    // 3. Filter the node array
     const connectedNodes = fullGraphData.nodes.filter(n => connectedNodeIds.has(n.id));
-
-    // 4. Update the display!
     setGraphData({ nodes: connectedNodes, links: connectedLinks });
     setIsFocused(true);
   };
@@ -64,7 +53,6 @@ function App() {
     setGraphData(fullGraphData);
     setIsFocused(false);
   };
-  // -----------------------------
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -92,10 +80,8 @@ function App() {
   const handleDelete = async () => {
     if (!window.confirm("Permanently delete this memory?")) return;
     await fetch(`http://localhost:8000/node/${selectedNode.id}`, { method: 'DELETE' });
-    
     const updatedNodes = fullGraphData.nodes.filter(n => n.id !== selectedNode.id);
     const updatedLinks = fullGraphData.links.filter(l => (l.source.id || l.source) !== selectedNode.id && (l.target.id || l.target) !== selectedNode.id);
-    
     setFullGraphData({ nodes: updatedNodes, links: updatedLinks });
     setGraphData({ nodes: updatedNodes, links: updatedLinks });
     setSelectedNode(null);
@@ -107,7 +93,6 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editForm)
     });
-    
     const updateNodesList = nodes => nodes.map(n => n.id === selectedNode.id ? { ...n, name: editForm.name, summary: editForm.summary } : n);
     setFullGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
     setGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
@@ -117,7 +102,6 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Top Bar for Resetting View */}
       {isFocused && (
         <div className="top-bar">
           <button className="reset-view-btn" onClick={handleResetFocus}>
@@ -138,19 +122,31 @@ function App() {
         />
       </div>
 
-      {/* Command Palette */}
-      <div className="command-palette">
-         <form onSubmit={handleSearch} className="search-form">
-          <input 
-            type="text" placeholder="Ask your Second Brain..." 
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} disabled={isSearching}
-          />
-          <button type="submit" disabled={isSearching}>{isSearching ? 'Thinking...' : 'Ask'}</button>
-        </form>
-        {aiResponse && <div className="response-area"><p>{aiResponse}</p></div>}
-      </div>
+      <Draggable handle=".chat-handle">
+        <div className={`command-palette ${isChatCollapsed ? 'collapsed' : ''}`}>
+          <div className="chat-handle">
+            <span className="drag-icon">⠿</span>
+            <span className="chat-title">Second Brain AI</span>
+            <button className="collapse-btn-small" onClick={() => setIsChatCollapsed(!isChatCollapsed)}>
+              {isChatCollapsed ? '▲' : '▼'}
+            </button>
+          </div>
+          
+          {!isChatCollapsed && (
+            <>
+              <form onSubmit={handleSearch} className="search-form">
+                <input 
+                  type="text" placeholder="Ask your Second Brain..." 
+                  value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} disabled={isSearching}
+                />
+                <button type="submit" disabled={isSearching}>{isSearching ? 'Thinking...' : 'Ask'}</button>
+              </form>
+              {aiResponse && <div className="response-area"><p>{aiResponse}</p></div>}
+            </>
+          )}
+        </div>
+      </Draggable>
 
-      {/* Side Panel */}
       {selectedNode && (
         <div className="side-panel">
           <button className="close-btn" onClick={() => setSelectedNode(null)}>✕</button>

@@ -12,6 +12,7 @@
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-draggable": "^4.5.0",
     "react-force-graph-3d": "^1.29.1"
   },
   "devDependencies": {

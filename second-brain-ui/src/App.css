@@ -10,7 +10,7 @@ body, html {
 }
 
 .app-container {
-  position: absolute; /* This breaks it out of the Vite #root cage */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
@@ -26,14 +26,14 @@ body, html {
   height: 100%;
 }
 
-/* Apple-esque Glassmorphism Side Panel */
+/* Side Panel */
 .side-panel {
   position: absolute;
   top: 20px;
   right: 20px;
   width: 350px;
   max-height: calc(100vh - 40px);
-  box-sizing: border-box; /* This keeps padding from expanding the width */
+  box-sizing: border-box;
   background: rgba(30, 30, 30, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -43,7 +43,6 @@ body, html {
   color: #f5f5f7;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   overflow-y: auto;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
   z-index: 10;
   animation: slideIn 0.3s ease-out;
 }
@@ -53,9 +52,6 @@ body, html {
   font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.5px;
-  padding-right: 30px; /* Prevents text from hiding under the close button */
-  word-wrap: break-word; /* Forces long titles to wrap */
-  overflow-wrap: break-word;
 }
 
 .divider {
@@ -63,16 +59,6 @@ body, html {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
   margin-bottom: 16px;
-}
-
-.side-panel p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #a1a1a6;
-  white-space: pre-wrap; /* Respects line breaks from your AI summaries */
-  word-wrap: break-word; /* Forces long words/links to wrap */
-  overflow-wrap: break-word;
 }
 
 .close-btn {
@@ -89,14 +75,9 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
 }
 
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* --- Command Palette (Chat Interface) --- */
+/* Command Palette (Floating & Draggable) */
 .command-palette {
   position: absolute;
   bottom: 40px;
@@ -104,17 +85,63 @@ body, html {
   transform: translateX(-50%);
   width: 600px;
   max-width: 90vw;
-  background: rgba(30, 30, 30, 0.6);
+  background: rgba(30, 30, 30, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 16px;
+  padding: 0 16px 16px 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-  z-index: 20;
+  z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  cursor: default;
+  transition: width 0.3s, padding 0.3s;
+}
+
+.command-palette.collapsed {
+  width: 200px;
+  padding: 0 12px 0 12px;
+  background: rgba(40, 40, 40, 0.9);
+}
+
+.chat-handle {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  cursor: grab;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+}
+
+.chat-handle:active {
+  cursor: grabbing;
+}
+
+.drag-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-right: 12px;
+}
+
+.chat-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4a90e2;
+}
+
+.collapse-btn-small {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 10px;
 }
 
 .search-form {
@@ -131,11 +158,6 @@ body, html {
   color: white;
   font-size: 16px;
   outline: none;
-  transition: border-color 0.2s;
-}
-
-.search-form input:focus {
-  border-color: #4a90e2;
 }
 
 .search-form button {
@@ -144,19 +166,8 @@ body, html {
   border: none;
   border-radius: 8px;
   padding: 0 24px;
-  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.search-form button:hover:not(:disabled) {
-  background: #357abd;
-}
-
-.search-form button:disabled {
-  background: #555;
-  cursor: not-allowed;
 }
 
 .response-area {
@@ -164,16 +175,35 @@ body, html {
   border-radius: 8px;
   padding: 16px;
   color: #e5e5ea;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
-  max-height: 300px;
+  max-height: 250px;
   overflow-y: auto;
   border-left: 3px solid #4a90e2;
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+/* Focus mode styles */
+.action-btn.focus {
+  background: rgba(74, 144, 226, 0.2);
+  color: #4a90e2;
+  border: 1px solid rgba(74, 144, 226, 0.4);
+}
+
+.top-bar {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 20;
+}
+
+.reset-view-btn {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 /* Edit Mode Styling */
@@ -183,24 +213,12 @@ body, html {
   gap: 12px;
 }
 
-.edit-input {
+.edit-input, .edit-textarea {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 10px;
   color: white;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.edit-textarea {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 10px;
-  color: #a1a1a6;
-  font-size: 15px;
-  resize: vertical;
 }
 
 .panel-actions {
@@ -216,50 +234,13 @@ body, html {
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .action-btn.save { background: #34c759; color: white; }
-.action-btn.cancel { background: rgba(255, 255, 255, 0.1); color: white; }
-.action-btn.edit { background: rgba(255, 255, 255, 0.1); color: white; }
+.action-btn.cancel, .action-btn.edit { background: rgba(255, 255, 255, 0.1); color: white; }
 .action-btn.delete { background: rgba(255, 59, 48, 0.2); color: #ff3b30; }
 
-.action-btn:hover { opacity: 0.8; }
-
-/* Focus Button inside Side Panel */
-.action-btn.focus {
-  background: rgba(74, 144, 226, 0.2);
-  color: #4a90e2;
-  border: 1px solid rgba(74, 144, 226, 0.4);
-}
-.action-btn.focus:hover {
-  background: rgba(74, 144, 226, 0.4);
-}
-
-/* Floating Top Bar for Resetting Focus */
-.top-bar {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 20;
-}
-
-.reset-view-btn {
-  background: rgba(30, 30, 30, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s;
-}
-
-.reset-view-btn:hover {
-  background: rgba(50, 50, 50, 0.9);
-  border-color: rgba(255, 255, 255, 0.4);
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
