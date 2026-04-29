@@ -30,7 +30,7 @@ A personal knowledge management system that extracts insights from your conversa
    .\venv\Scripts\activate
    ```
 3. Install dependencies (ensure `chromadb`, `neo4j`, `fastapi`, `uvicorn`, `ollama` are installed).
-4. Update Neo4j credentials in `main.py` and `agent4.py` if different from `password1234`.
+4. Update Neo4j credentials in `main.py` and `agent4.py`.
 
 ### 3. Frontend Setup
 1. Navigate to the UI folder:
