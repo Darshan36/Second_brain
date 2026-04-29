@@ -348,7 +348,7 @@ async def delete_node(node_id: str):
 
 @app.get("/export")
 async def export_to_markdown():
-    export_dir = "SecondBrain_Export"
+    export_dir = os.path.join("SecondBrain_Export", "Second Brain")
     
     # Create the folder if it doesn't exist
     os.makedirs(export_dir, exist_ok=True)
