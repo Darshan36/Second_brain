@@ -445,3 +445,35 @@ async def get_graph():
             })
             
     return graph_data
+
+# --- HUD Stats Endpoint ---
+
+@app.get("/stats")
+async def get_brain_stats():
+    with neo4j_driver.session() as session:
+        # 1. Count total memories (nodes)
+        node_count_record = session.run("MATCH (n:KnowledgeNode) RETURN count(n) AS count").single()
+        node_count = node_count_record["count"] if node_count_record else 0
+        
+        # 2. Count total connections (edges)
+        edge_count_record = session.run("MATCH ()-[r]->() RETURN count(r) AS count").single()
+        edge_count = edge_count_record["count"] if edge_count_record else 0
+        
+        # 3. Find the most connected thought
+        most_connected = session.run("""
+            MATCH (n:KnowledgeNode)-[r]-()
+            WITH n, count(r) as degree
+            ORDER BY degree DESC
+            LIMIT 1
+            RETURN n.label AS label, degree
+        """).peek() # Use peek() as single() might throw if empty
+        
+        top_concept = most_connected["label"] if most_connected else "None"
+        top_degree = most_connected["degree"] if most_connected else 0
+
+    return {
+        "total_memories": node_count,
+        "total_connections": edge_count,
+        "top_concept": top_concept,
+        "top_degree": top_degree
+    }

@@ -11,12 +11,27 @@ function App() {
   const [isFocused, setIsFocused] = useState(false);
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   
+  // HUD State
+  const [brainStats, setBrainStats] = useState({ 
+    total_memories: 0, 
+    total_connections: 0, 
+    top_concept: 'Loading...', 
+    top_degree: 0 
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [highlightNodes, setHighlightNodes] = useState(new Set());
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', summary: '' });
+
+  const fetchStats = () => {
+    fetch('http://localhost:8000/stats')
+      .then(res => res.json())
+      .then(data => setBrainStats(data))
+      .catch(err => console.error("Error fetching stats:", err));
+  };
 
   useEffect(() => {
     fetch('http://localhost:8000/graph')
@@ -26,6 +41,8 @@ function App() {
         setGraphData(data);
       })
       .catch(err => console.error("Error fetching brain data:", err));
+      
+    fetchStats();
   }, []);
 
   const handleNodeClick = (node) => {
@@ -86,45 +103,59 @@ function App() {
     setFullGraphData({ nodes: updatedNodes, links: updatedLinks });
     setGraphData({ nodes: updatedNodes, links: updatedLinks });
     setSelectedNode(null);
+    fetchStats();
   };
-const handleSaveEdit = async () => {
-  await fetch(`http://localhost:8000/node/${selectedNode.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(editForm)
-  });
-  const updateNodesList = nodes => nodes.map(n => n.id === selectedNode.id ? { ...n, name: editForm.name, summary: editForm.summary } : n);
-  setFullGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
-  setGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
-  setSelectedNode({ ...selectedNode, name: editForm.name, summary: editForm.summary });
-  setIsEditing(false);
-};
 
-const handleExport = async () => {
-  try {
-    const res = await fetch('http://localhost:8000/export');
-    const data = await res.json();
-    alert(`✅ ${data.message}`);
-  } catch (err) {
-    console.error(err);
-    alert("❌ Export failed. Check terminal for errors.");
-  }
-};
+  const handleSaveEdit = async () => {
+    await fetch(`http://localhost:8000/node/${selectedNode.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm)
+    });
+    const updateNodesList = nodes => nodes.map(n => n.id === selectedNode.id ? { ...n, name: editForm.name, summary: editForm.summary } : n);
+    setFullGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
+    setGraphData(prev => ({ nodes: updateNodesList(prev.nodes), links: prev.links }));
+    setSelectedNode({ ...selectedNode, name: editForm.name, summary: editForm.summary });
+    setIsEditing(false);
+    fetchStats();
+  };
 
-return (
-  <div className="app-container">
-    {/* Top Bar for Resetting View & Exporting */}
-    <div className="top-bar">
-      {isFocused && (
-        <button className="reset-view-btn" onClick={handleResetFocus}>
-          ← Back to Full Graph
-        </button>
-      )}
-      <button className="export-btn" onClick={handleExport}>
-        📥 Export to Markdown
-      </button>
-    </div>
+  const handleExport = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/export');
+      const data = await res.json();
+      alert(`✅ ${data.message}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Export failed. Check terminal for errors.");
+    }
+  };
 
+  return (
+    <div className="app-container">
+      <div className="top-bar">
+        {isFocused && (
+          <button className="reset-view-btn" onClick={handleResetFocus}>← Back to Full Graph</button>
+        )}
+        <button className="export-btn" onClick={handleExport}>📥 Export to Markdown</button>
+      </div>
+
+      <div className="stats-hud">
+        <h3>System Telemetry</h3>
+        <div className="stat-row">
+          <span className="stat-label">Total Memories</span>
+          <span className="stat-value">{brainStats.total_memories}</span>
+        </div>
+        <div className="stat-row">
+          <span className="stat-label">Neural Pathways</span>
+          <span className="stat-value">{brainStats.total_connections}</span>
+        </div>
+        <div className="stat-divider"></div>
+        <div className="stat-row">
+          <span className="stat-label">Core Concept</span>
+          <span className="stat-value highlight">{brainStats.top_concept} ({brainStats.top_degree})</span>
+        </div>
+      </div>
 
       <div className="graph-container">
         <ForceGraph3D

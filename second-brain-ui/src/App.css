@@ -269,3 +269,58 @@ body, html {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* --- Telemetry HUD --- */
+.stats-hud {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 250px;
+  background: rgba(15, 15, 18, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(74, 144, 226, 0.3); /* Slight blue tint to the border */
+  border-radius: 12px;
+  padding: 16px;
+  color: #f5f5f7;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(74, 144, 226, 0.1);
+  z-index: 5; /* Lower than side panel (10) so it hides cleanly behind it */
+  pointer-events: none; /* Lets you click through the HUD to rotate the graph */
+}
+
+.stats-hud h3 {
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #4a90e2;
+  font-weight: 700;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.stat-label {
+  color: #a1a1a6;
+}
+
+.stat-value {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.stat-value.highlight {
+  color: #34c759; /* Green highlight for the core concept */
+}
+
+.stat-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 10px 0;
+}
